@@ -24,6 +24,15 @@ This project is a community-maintained fork of the "Unlimited Extension" for the
 Migration](https://wordpress.org/plugins/all-in-one-wp-migration/) plugin. It aims to provide continued freedom, maintainability, and usability under the [GPL
 license](https://www.gnu.org/licenses/gpl-3.0.html).
 
+## Important:
+
+In the last few versions additional protection was within this plugin which called home and wouldn't run the setting unless it got a valid licence setting, I am currently testing a fix for this and it is working well but I just need to check other version, in the meantime I have added I have added the following two files to the repo
+
+- wp.org Plugin\all-in-one-wp-migration.7.101.zip a working version of the free wordpress.org plugin to go with 2.81.1
+- wpress-extractor.exe a file to extract wpress files in windows.
+
+**So you can extract your files if its not working for you and I have tested version 2.76.1 with 7.101 and this does appear to restore successfully**
+
 ###  Key Changes in This Fork
 
 ### ✅ EULA Prompt Remove
