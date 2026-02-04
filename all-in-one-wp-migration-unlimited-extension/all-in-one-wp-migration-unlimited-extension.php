@@ -5,7 +5,7 @@
  * Tested up to:      6.9
  * Requires at least: 6.5
  * Requires PHP:      8.0
- * Version:           2.81.1
+ * Version:           2.82
  * Author:            stingray82
  * Author URI:        https://github.com/stingray82/
  * License:           GPL3
@@ -21,8 +21,8 @@
  * Technical note: Certain internal constants, folder and file names are retained solely for interoperability; changing them would break functionality. Their presence does not imply endorsement or association.
  *
 */
-
 /*
+ *
  * Copyright (C) 2014-2025 ServMask Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,28 +52,65 @@ if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Kangaroos cannot jump here' );
 }
 
-function ai1wmue_mock_license_response( $pre, $args, $url ) {
-	// Intercept all requests to servmask.com domains
-	if ( false !== strpos( $url, 'servmask.com' ) ) {
-		$body = wp_json_encode(
-			array(
-				'success'        => true,
-				'license_status' => 'valid',
-			)
-		);
-		return array(
-			'headers'  => array(),
-			'body'     => $body,
-			'response' => array(
-				'code'    => 200,
-				'message' => 'OK',
-			),
-			'cookies'  => array(),
-			'filename' => null,
-		);
-	}
-	return false;
+if ( is_multisite() ) {
+	// Multisite Extension shall be used instead
+	return;
 }
+
+add_filter('pre_http_request', function($response, $parsed_args, $url) {
+    if (strpos($url, 'servmask.com') !== false || strpos($url, 'redirect.wp-migration.com') !== false) {
+        return array(
+            'headers'  => array(),
+            'body'     => '{"message":null}',
+            'response' => array(
+                'code'    => 200,
+                'message' => 'OK',
+            ),
+            'cookies'  => array(),
+            'filename' => null,
+        );
+    }
+    return $response;
+}, 10, 3);
+
+add_action('admin_head', function() {
+    // Only load on AI1WM pages
+    $screen = get_current_screen();
+    if (!$screen || strpos($screen->id, 'ai1wm') === false) {
+        return;
+    }
+    ?>
+    <script type="text/javascript">
+    (function() {
+        if (window._ai1wmBypass) return;
+        window._ai1wmBypass = true;
+
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            const urlStr = typeof url === 'string' ? url : (url?.href || '');
+
+            if (urlStr.includes('redirect.wp-migration.com')) {
+                console.log('AI1WM: License check bypassed');
+                return Promise.resolve(new Response(JSON.stringify({
+                    message: {
+                        valid: true,
+                        activated: true,
+                        status: 'active',
+                        expires: '2099-12-31T23:59:59Z'
+                    }
+                }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+
+            return originalFetch.apply(this, arguments);
+        };
+    })();
+    </script>
+    <?php
+}, 1);
+
 // Check SSL Mode
 if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && ( $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) ) {
 	$_SERVER['HTTPS'] = 'on';
